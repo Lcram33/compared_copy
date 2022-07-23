@@ -238,7 +238,10 @@ def scan_copy(source_path, destination_path, current_sub_path):
                 total_copy_size += dir_size
         else:
             if len(listdir(src_dir)) > 0:
-                scan_copy(source_path, destination_path, src_dir.replace(source_path, ''))
+                if ignore_dir(dir):
+                    copy_ignored_dirs += src_dir + '\n'
+                else:
+                    scan_copy(source_path, destination_path, src_dir.replace(source_path, ''))
 
 
 def delete():
@@ -498,6 +501,14 @@ def main():
 
     source_path = args[0]
     destination_path = args[1]
+
+    if source_path.startswith('.'):
+        print("Using current path as source starts with .")
+        source_path = getcwd() + source_path[1:len(source_path)]
+    
+    if destination_path.startswith('.'):
+        print("Using current path as destination starts with .")
+        destination_path = getcwd() + destination_path[1:len(destination_path)]
 
     if not exists(source_path) or not isdir(source_path):
         print("The source path is not valid (does not exists or is not a folder).")

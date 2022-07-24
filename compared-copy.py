@@ -495,12 +495,33 @@ Done in {delay} s.
 
 def main():
     args = sys.argv[1:]
-    if len(args) != 2:
+
+    if len(args) == 0:
         main_noargs()
+        return
+
+    if len(args) not in [2, 3]:
+        print("Too few or too much parameters.")
         return
 
     source_path = args[0]
     destination_path = args[1]
+
+    if len(args) == 3:
+        try:
+            do_confirm = int(args[2])
+        except Exception:
+            print("Invalid third parameter.")
+            return
+        
+        if do_confirm not in [0, 1]:
+            print("Invalid third parameter.")
+            return
+    else:
+        do_confirm = 0
+    
+    if do_confirm:
+        print("AUTOCONFIRM ENABLED - Will copy directly after scan.")
 
     if source_path.startswith('.'):
         print("Using current path as source starts with .")
@@ -578,26 +599,33 @@ Ignored dirs :
     """)
     print_separator()
 
-    print("PROCEED")
-    check = input("Perform compared copy ? (y/n) ")
-    if check == 'y':
+    if not do_confirm:
+        print("PROCEED")
+        check = input("Perform compared copy ? (y/n) ")
+        if check == 'y':
+            print("PROCEEDING. Please wait and do not close this window. This can take a while.")
+
+            delete()
+            copy()
+        else:
+            print("Canceled, nothing done.")
+            return
+    else:
         print("PROCEEDING. Please wait and do not close this window. This can take a while.")
 
         delete()
         copy()
 
-        percent_deleted = None if delete_files_count == 0 else round(100 * deleted_count / delete_files_count)
-        percent_copied = None if total_copy_count == 0 else round(100 * copied_count / total_copy_count)
-        
-        print(f"""
+    percent_deleted = None if delete_files_count == 0 else round(100 * deleted_count / delete_files_count)
+    percent_copied = None if total_copy_count == 0 else round(100 * copied_count / total_copy_count)
+    
+    print(f"""
 DONE
 
 DELETE :    {percent_deleted}% of the scheduled files deleted.
 COPY :      {percent_copied}% of the scheduled files copied.
-        """)
-    else:
-        print("Canceled, nothing done.")
-    
+    """)
+
     print_separator()
 
 

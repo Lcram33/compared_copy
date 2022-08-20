@@ -6,6 +6,7 @@ import time
 import hashlib
 import sys
 import re
+import threading
 
 
 if exists('./ignore_dirs.list'):
@@ -54,6 +55,23 @@ copy_failed = ""
 copied_count = 0
 copy_failed_count = 0
 
+total_op = 0
+current_op_count = 0
+op_percent = 0
+
+
+def animated_loading():
+    chars = ["⢿", "⣻", "⣽", "⣾", "⣷", "⣯", "⣟", "⡿"]
+    for char in chars:
+        sys.stdout.write('\r'+'Scanning ' + char + '\t')
+        time.sleep(.1)
+        sys.stdout.flush() 
+
+def animated_percent_bar(percent):
+    filled_squares = round(percent/10)
+    bar = '[' + filled_squares * '■' + (10 - filled_squares) * '□' + f"] {percent}%\t"
+    sys.stdout.flush()
+    sys.stdout.write('\r'+bar)
 
 def print_separator():
     print('-' * get_terminal_size().columns)
@@ -249,6 +267,11 @@ def delete():
     global delete_failed
     global deleted_count
     global delete_failed_count
+    global op_percent
+    global total_op
+    global current_op_count
+
+    total_op = len(delete_path_list) + len(copy_path_list)
 
     for delete_path in delete_path_list:
         try:
@@ -263,12 +286,18 @@ def delete():
         except Exception as e:
             delete_failed += delete_path + ", error : " + str(e) + '\n'
             delete_failed_count += 1
+        
+        current_op_count += 1
+        op_percent = round(100 * current_op_count / total_op)
 
 def copy():
     global copied_list
     global copy_failed
     global copied_count
     global copy_failed_count
+    global op_percent
+    global total_op
+    global current_op_count
 
     for copy_path in copy_path_list:
         try:
@@ -283,6 +312,11 @@ def copy():
         except Exception as e:
             copy_failed += copy_path['src'] + ", error : " + str(e) + '\n'
             copy_failed_count += 1
+        
+        current_op_count += 1
+        op_percent = round(100 * current_op_count / total_op)
+    
+    time.sleep(.5)
 
 
 def main_noargs():
@@ -335,8 +369,15 @@ def main_noargs():
 
         start = time.time()
 
-        scan_delete(source_path, destination_path, '')
-        scan_copy(source_path, destination_path, '')
+        the_process = threading.Thread(name='process', target=scan_delete, args=(source_path, destination_path, '',))
+        the_process.start()
+        while the_process.is_alive():
+            animated_loading()
+
+        the_process = threading.Thread(name='process', target=scan_copy, args=(source_path, destination_path, '',))
+        the_process.start()
+        while the_process.is_alive():
+            animated_loading()
 
         end = time.time()
 
@@ -431,8 +472,15 @@ Done in {delay} s.
 
         start = time.time()
 
-        delete()
-        copy()
+        the_process = threading.Thread(name='process', target=delete)
+        the_process.start()
+        while the_process.is_alive():
+            animated_percent_bar(op_percent)
+
+        the_process = threading.Thread(name='process', target=copy)
+        the_process.start()
+        while the_process.is_alive():
+            animated_percent_bar(op_percent)
 
         end = time.time()
 
@@ -545,8 +593,15 @@ Destination : {destination_path}
     """)
     print("COMPARED COPY : scan in progress, please wait, this can take a while.")
 
-    scan_delete(source_path, destination_path, '')
-    scan_copy(source_path, destination_path, '')
+    the_process = threading.Thread(name='process', target=scan_delete, args=(source_path, destination_path, '',))
+    the_process.start()
+    while the_process.is_alive():
+        animated_loading()
+
+    the_process = threading.Thread(name='process', target=scan_copy, args=(source_path, destination_path, '',))
+    the_process.start()
+    while the_process.is_alive():
+        animated_loading()
     
     print_separator()
 
@@ -605,16 +660,31 @@ Ignored dirs :
         if check == 'y':
             print("PROCEEDING. Please wait and do not close this window. This can take a while.")
 
-            delete()
-            copy()
+            the_process = threading.Thread(name='process', target=delete)
+            the_process.start()
+            while the_process.is_alive():
+                animated_percent_bar(op_percent)
+            
+            the_process = threading.Thread(name='process', target=copy)
+            the_process.start()
+            while the_process.is_alive():
+                animated_percent_bar(op_percent)
+            
         else:
             print("Canceled, nothing done.")
             return
     else:
         print("PROCEEDING. Please wait and do not close this window. This can take a while.")
 
-        delete()
-        copy()
+        the_process = threading.Thread(name='process', target=delete)
+        the_process.start()
+        while the_process.is_alive():
+            animated_percent_bar(op_percent)
+        
+        the_process = threading.Thread(name='process', target=copy)
+        the_process.start()
+        while the_process.is_alive():
+            animated_percent_bar(op_percent)
 
     percent_deleted = None if delete_files_count == 0 else round(100 * deleted_count / delete_files_count)
     percent_copied = None if total_copy_count == 0 else round(100 * copied_count / total_copy_count)

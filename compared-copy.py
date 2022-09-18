@@ -1,6 +1,7 @@
 from os.path import getsize, isdir, join, exists, getmtime
-from os import listdir, walk, remove, get_terminal_size, getcwd
+from os import listdir, walk, remove, get_terminal_size, getcwd, getlogin
 from shutil import rmtree, copy2, copytree
+from colorama import Fore, Style
 from datetime import datetime
 import time
 import hashlib
@@ -73,8 +74,31 @@ def animated_percent_bar(percent):
     sys.stdout.flush()
     sys.stdout.write('\r'+bar)
 
+def insert_plus(path):
+    return Fore.GREEN + '[+] ' + Style.RESET_ALL + path + '\n'
+
+def insert_minus(path):
+    return Fore.RED + '[-] ' + Style.RESET_ALL + path + '\n'
+
+def insert_ignored(path):
+    return Fore.YELLOW + '[x] ' + Style.RESET_ALL + path + '\n'
+
+def add_colors(str_data, type):
+    new_data = ""
+    if type == '+':
+        for line in str_data.split('\n'):
+            new_data += insert_plus(line) if line != '' else ''
+    elif type == '-':
+        for line in str_data.split('\n'):
+            new_data += insert_minus(line) if line != '' else ''
+    if type == 'x':
+        for line in str_data.split('\n'):
+            new_data += insert_ignored(line) if line != '' else ''
+        
+    return new_data
+
 def print_separator():
-    print('-' * get_terminal_size().columns)
+    print(Fore.BLUE + '-' * get_terminal_size().columns + Style.RESET_ALL)
 
 def md5(path):
     hash_md5 = hashlib.md5()
@@ -330,7 +354,7 @@ def main_noargs():
     """
 
     print_separator()
-    print(splash)
+    print(Fore.LIGHTCYAN_EX + splash + Style.RESET_ALL)
     print_separator()
     print()
 
@@ -344,20 +368,28 @@ def main_noargs():
     if destination_path.startswith('.'):
         print("Using current path as destination starts with .")
         destination_path = getcwd() + destination_path[1:len(destination_path)]
+    
+    if source_path.startswith('~'):
+        print("Using home path as source starts with ~")
+        source_path = f"/home/{getlogin()}/{source_path[1:len(source_path)]}"
+    
+    if destination_path.startswith('.'):
+        print("Using home path as destination starts with ~")
+        destination_path = f"/home/{getlogin()}/{destination_path[1:len(destination_path)]}"
 
     if not exists(source_path) or not isdir(source_path):
-        print("The source path is not valid (does not exists or is not a folder).")
+        print(Fore.RED + "The source path is not valid (does not exists or is not a folder)." + Style.RESET_ALL)
         return
 
     if not exists(destination_path) or not isdir(destination_path):
-        print("The destination path is not valid (does not exists or is not a folder).")
+        print(Fore.RED + "The destination path is not valid (does not exists or is not a folder)." + Style.RESET_ALL)
         return
 
     print()
     print()
     print_separator()
     print("INITIAL SCAN")
-    print("WARNING : beyond this point, any change made in the source or destination folder WILL NOT be taken into account.")
+    print(Fore.YELLOW + "WARNING : beyond this point, any change made in the source or destination folder WILL NOT be taken into account." + Style.RESET_ALL)
     print("This WILL NOT affect your files. It will generate a report of exactly what will be done in the next step.")
 
     check = input("Perform initial scan ? (y/n) ")
@@ -461,8 +493,8 @@ Done in {delay} s.
 
     print_separator()
     print("PROCEED")
-    print("WARNING : this will be done according to the previous scan. Any change made in the source or destination folder after the scan WILL NOT be taken into account.")
-    print("WARNING : This WILL affect your files. Make sure to read the report !")
+    print(Fore.YELLOW + "WARNING : this will be done according to the previous scan. Any change made in the source or destination folder after the scan WILL NOT be taken into account." + Style.RESET_ALL)
+    print(Fore.YELLOW + "WARNING : This WILL affect your files. Make sure to read the report !" + Style.RESET_ALL)
 
     check = input("Perform compared copy ? (y/n) ")
     print()
@@ -549,7 +581,7 @@ def main():
         return
 
     if len(args) not in [2, 3]:
-        print("Too few or too much parameters.")
+        print(Fore.RED + "Too few or too much parameters." + Style.RESET_ALL)
         return
 
     source_path = args[0]
@@ -559,17 +591,17 @@ def main():
         try:
             do_confirm = int(args[2])
         except Exception:
-            print("Invalid third parameter.")
+            print(Fore.RED + "Invalid third parameter." + Style.RESET_ALL)
             return
         
         if do_confirm not in [0, 1]:
-            print("Invalid third parameter.")
+            print(Fore.RED + "Invalid third parameter." + Style.RESET_ALL)
             return
     else:
         do_confirm = 0
     
     if do_confirm:
-        print("AUTOCONFIRM ENABLED - Will copy directly after scan.")
+        print(Fore.YELLOW + "AUTOCONFIRM ENABLED - Will copy directly after scan." + Style.RESET_ALL)
 
     if source_path.startswith('.'):
         print("Using current path as source starts with .")
@@ -580,11 +612,11 @@ def main():
         destination_path = getcwd() + destination_path[1:len(destination_path)]
 
     if not exists(source_path) or not isdir(source_path):
-        print("The source path is not valid (does not exists or is not a folder).")
+        print(Fore.RED + "The source path is not valid (does not exists or is not a folder)." + Style.RESET_ALL)
         return
 
     if not exists(destination_path) or not isdir(destination_path):
-        print("The destination path is not valid (does not exists or is not a folder).")
+        print(Fore.RED + "The destination path is not valid (does not exists or is not a folder)." + Style.RESET_ALL)
         return
 
     print(f"""
@@ -612,7 +644,7 @@ Destination : {destination_path}
 
     md5res = f"""
 md5sum does not match
-{delete_md5_missmatch}
+{add_colors(delete_md5_missmatch, '-')}
     """ if len(delete_md5_missmatch) > 0 else '\n'
 
     print(f"""
@@ -627,36 +659,36 @@ Copy {total_copy_count} files, {convert_size(total_copy_size) + " (or " + str(to
 DELETE DETAILS
 
 No longer exists on source
-{delete_no_longer_exists}
+{add_colors(delete_no_longer_exists, '-')}
 
 No longer exists on source (folders)
-{delete_dirs}
+{add_colors(delete_dirs, '-')}
 
 Size does not match
-{delete_size_missmatch}
+{add_colors(delete_size_missmatch, '-')}
 
 Last modification date does not match
-{delete_date_missmatch}
+{add_colors(delete_date_missmatch, '-')}
 {md5res}
 COPY DETAILS
 
 Files :
-{copy_files}
+{add_colors(copy_files, '+')}
 
 Folders :
-{copy_dirs}
+{add_colors(copy_dirs, '+')}
 
 Ignored files :
-{copy_ignored_files}
+{add_colors(copy_ignored_files, 'x')}
 
 Ignored dirs :
-{copy_ignored_dirs}
+{add_colors(copy_ignored_dirs, 'x')}
     """)
     print_separator()
 
     if not do_confirm:
         print("PROCEED")
-        check = input("Perform compared copy ? (y/n) ")
+        check = input(Fore.YELLOW + "Perform compared copy ? (y/n) " + Style.RESET_ALL)
         if check == 'y':
             print("PROCEEDING. Please wait and do not close this window. This can take a while.")
 

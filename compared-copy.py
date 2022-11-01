@@ -1,4 +1,4 @@
-from os.path import getsize, isdir, join, exists, getmtime
+from os.path import getsize, isdir, isfile, join, exists, getmtime
 from os import listdir, walk, remove, get_terminal_size, getcwd, getlogin
 from shutil import rmtree, copy2, copytree
 from colorama import Fore, Style
@@ -71,8 +71,8 @@ def animated_loading():
 def animated_percent_bar(percent):
     filled_squares = round(percent/10)
     bar = '[' + filled_squares * '■' + (10 - filled_squares) * '□' + f"] {percent}%\t"
-    sys.stdout.flush()
     sys.stdout.write('\r'+bar)
+    sys.stdout.flush()
 
 def insert_plus(path):
     return Fore.GREEN + '[+] ' + Style.RESET_ALL + path + '\n'
@@ -118,7 +118,7 @@ def file_name_time(input_date):
     return str(input_date).split('.')[0].replace(':', '-').replace(' ', '.').replace('/', '-')
 
 def rec_dir_file_count(dir_path):
-    count = len([file for file in listdir(dir_path) if not isdir(join(dir_path, file))])
+    count = len([file for file in listdir(dir_path) if isfile(join(dir_path, file))])
 
     for dir in [dir for dir in listdir(dir_path) if isdir(join(dir_path, dir))]:
         count += rec_dir_file_count(join(dir_path, dir))
@@ -168,9 +168,9 @@ def scan_delete(source_path, destination_path, current_sub_path):
     if len(current_sub_path) > 0 and current_sub_path[0] == '/':
         current_sub_path = current_sub_path[1:]
 
-    destination_files = [file for file in listdir(join(destination_path, current_sub_path)) if not isdir(join(destination_path, current_sub_path, file))]
+    destination_files = [file for file in listdir(join(destination_path, current_sub_path)) if isfile(join(destination_path, current_sub_path, file))]
     destination_dirs = [file for file in listdir(join(destination_path, current_sub_path)) if isdir(join(join(destination_path, current_sub_path), file))]
-    source_files = [file for file in listdir(join(source_path, current_sub_path)) if not isdir(join(join(source_path, current_sub_path), file))]
+    source_files = [file for file in listdir(join(source_path, current_sub_path)) if isfile(join(join(source_path, current_sub_path), file))]
     source_dirs = [file for file in listdir(join(source_path, current_sub_path)) if isdir(join(join(source_path, current_sub_path), file))]
 
     temp_path = join(destination_path, current_sub_path)
@@ -243,9 +243,9 @@ def scan_copy(source_path, destination_path, current_sub_path):
     if len(current_sub_path) > 0 and current_sub_path[0] == '/':
         current_sub_path = current_sub_path[1:]
 
-    destination_files = [file for file in listdir(join(destination_path, current_sub_path)) if not isdir(join(destination_path, current_sub_path, file))]
+    destination_files = [file for file in listdir(join(destination_path, current_sub_path)) if isfile(join(destination_path, current_sub_path, file))]
     destination_dirs = [file for file in listdir(join(destination_path, current_sub_path)) if isdir(join(join(destination_path, current_sub_path), file))]
-    source_files = [file for file in listdir(join(source_path, current_sub_path)) if not isdir(join(join(source_path, current_sub_path), file))]
+    source_files = [file for file in listdir(join(source_path, current_sub_path)) if isfile(join(join(source_path, current_sub_path), file))]
     source_dirs = [file for file in listdir(join(source_path, current_sub_path)) if isdir(join(join(source_path, current_sub_path), file))]
 
     current_dest_path = join(destination_path, current_sub_path)
@@ -527,8 +527,8 @@ Done in {delay} s.
         f.write(splash + '\n' + f"""
 Report generated on {str(gen_date)}
 
-DELETE :    {percent_deleted}% of the scheduled files deleted.
-COPY :      {percent_copied}% of the scheduled files copied.
+DELETE :    {percent_deleted}{"% of the scheduled files deleted." if percent_deleted != None else ""}
+COPY :      {percent_copied}{"% of the scheduled files copied." if percent_copied != None else ""}
 
 Done in {delay} s.
 
@@ -724,8 +724,8 @@ Ignored dirs :
     print(f"""
 DONE
 
-DELETE :    {percent_deleted}% of the scheduled files deleted.
-COPY :      {percent_copied}% of the scheduled files copied.
+DELETE :    {percent_deleted}{"% of the scheduled files deleted." if percent_deleted != None else ""}
+COPY :      {percent_copied}{"% of the scheduled files copied." if percent_copied != None else ""}
     """)
 
     print_separator()

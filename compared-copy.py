@@ -180,8 +180,9 @@ def scan_delete(source_path, destination_path, current_sub_path):
 
         if file not in source_files:
             delete_path_list.append(dest_path)
-            total_delete_size += getsize(dest_path)
-            delete_no_longer_exists += dest_path + '\n'
+            file_size = getsize(dest_path)
+            total_delete_size += file_size
+            delete_no_longer_exists += f"{dest_path} ({convert_size(file_size)})\n"
             delete_files_count += 1
         else:
             src_path = join(source_path, current_sub_path, file)
@@ -260,8 +261,9 @@ def scan_copy(source_path, destination_path, current_sub_path):
                 copy_ignored_files += src_path + '\n'
             else:
                 copy_path_list.append({'src': src_path, 'dest': dest_path})
-                total_copy_size += getsize(src_path)
-                copy_files += src_path + '\n'
+                file_size = getsize(src_path)
+                total_copy_size += file_size
+                copy_files += f"{src_path} ({convert_size(file_size)})\n"
                 total_copy_count += 1
 
     for dir in source_dirs:

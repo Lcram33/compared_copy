@@ -110,6 +110,14 @@ To ignore files or dirs, add names or regex on ignore_dirs.list and ignore_files
 If you want to perform md5sum check rather than last modification date (useful on VeraCrypt containers !), just add the files names or regex on md5.list.
 
 
+### Other programs in this repo
+
+<i>rename_file_to_ntfs_format.py</i> : use to rename files so they can be copied that have a less-friendly naming policy. See [this](https://stackoverflow.com/a/35352640) for more details.
+   ```sh
+   python3 other/rename_file_to_ntfs_format.py path
+   ```
+
+
 <!-- ROADMAP -->
 ## Roadmap
 <h3>

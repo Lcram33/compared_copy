@@ -554,7 +554,7 @@ COPIED : {copied_count} files
 
 
 
-COPY FAILED : {delete_failed_count} failed
+COPY FAILED : {copy_failed_count} failed
 
 {copy_failed if len(copy_failed) > 0 else "None !"}
         """)
